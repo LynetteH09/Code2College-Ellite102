@@ -13,7 +13,16 @@ cursor = db.cursor()
 # Helps to get account
 def get_account(acc_number, pin):
     cursor.execute("SELECT * FROM accounts WHERE account_number = %s AND pin = %s", (acc_number, pin))
-    return cursor.fetchone()
+    row = cursor.fetchone()
+    if row:
+        return {
+            'account_number': row[0],
+            'name': row[1],
+            'pin': row[2],
+            'balance': row[3]
+        }
+    return None
+
 
 # Allows for User to View their Balance
 def view_balance():
@@ -23,7 +32,8 @@ def view_balance():
     if account:
         print(f"Balance: ${account['balance']:.2f}")
     else:
-        print("Account not found.")
+        print("\nAccount not found.")
+    print("-------------------------------")
 
 # Enables Desposits or Withdrawals
 def transaction():
@@ -31,7 +41,8 @@ def transaction():
     pin = input("PIN: ")
     account = get_account(acc, pin)
     if not account:
-        print("Invalid account or PIN.")
+        print("\nInvalid account or PIN.")
+        print("-------------------------------")
         return
 
     action = input("Type 'deposit' or 'withdraw': ").lower()
@@ -40,41 +51,53 @@ def transaction():
         if amount <= 0:
             raise ValueError
     except:
-        print("Invalid amount.")
+        print("\nInvalid amount.")
+        print("-------------------------------")
         return
 
     if action == 'withdraw':
         if amount > account['balance']:
             print("Not enough funds.")
+            print("-------------------------------")   
             return
         account['balance'] -= amount
     elif action == 'deposit':
         account['balance'] += amount
     else:
-        print("Invalid transaction type.")
+        print("\nInvalid transaction type.")
+        print("-------------------------------")
         return
 
     cursor.execute("UPDATE accounts SET balance = %s WHERE account_number = %s",
                    (account['balance'], account['account_number']))
     db.commit()
-    print("Transaction successful!")
+    print("\nTransaction successful!")
+    print("-------------------------------")    
 
 # Allows the user to Register an Account
 def register():
     acc = input("New Account Num: ")
+
+    # Check if account already exists
     cursor.execute("SELECT * FROM accounts WHERE account_number = %s", (acc,))
+    cursor.fetchall()  # clears the unread result
+
     name = input("Name: ")
     pin = input("Choose a 4-digit PIN: ")
+
     try:
         balance = float(input("Initial deposit: "))
     except:
-        print("Invalid amount.")
+        print("\nInvalid amount.")
+        print("-------------------------------")
         return
 
-    cursor.execute("INSERT INTO accounts (account_number, name, pin, balance) VALUES (%s, %s, %s, %s)",
+    cursor.execute("INSERT INTO accounts (account_number, account_name, pin, balance) VALUES (%s, %s, %s, %s)",
                    (acc, name, pin, balance))
     db.commit()
-    print("Account registered!")
+    print("\nAccount registered!")
+    print("-------------------------------")
+
 
 # Deletes an Account
 def delete_account():
@@ -82,9 +105,11 @@ def delete_account():
     if get_account(acc, pin):
         cursor.execute("DELETE FROM accounts WHERE account_number = %s", (acc,))
         db.commit()
-        print("Account deleted.")
+        print("\nAccount deleted.")
+        print("-------------------------------")
     else:
-        print("Account not found.")
+        print("\nAccount not found.")
+        print("-------------------------------")
 
 # Updates any User Info that may be Requested
 def update_account():
@@ -92,7 +117,8 @@ def update_account():
     pin = input("PIN: ")
     account = get_account(acc, pin)
     if not account:
-        print("Invalid account.")
+        print("\nInvalid account.")
+        print("-------------------------------")
         return
 
     print("What would you like to update?")
@@ -100,28 +126,30 @@ def update_account():
     choice = input("Choice: ")
     if choice == '1':
         new_name = input("Enter new name: ")
-        cursor.execute("UPDATE accounts SET name = %s WHERE account_number = %s", (new_name, acc))
+        cursor.execute("UPDATE accounts SET account_name = %s WHERE account_number = %s", (new_name, acc))
     elif choice == '2':
         new_pin = input("Enter new PIN: ")
         cursor.execute("UPDATE accounts SET pin = %s WHERE account_number = %s", (new_pin, acc))
     else:
-        print("Invalid choice.")
+        print("\nInvalid choice.")
         return
 
     db.commit()
-    print("Update successful.")
+    print("\nUpdate successful.")
+    print("-------------------------------")
+# Close the database connection when done
 
 # Menu System
 def menu():
     while True:
-        print("\n//// Elite 102 Banking System \\\\")
+        print("\n//// Elite 102 Banking System ////")
         print("1. View Balance")
         print("2. Deposit/Withdraw")
         print("3. Register New Account")
         print("4. Delete Account")
         print("5. Update Account Info")
         print("6. Exit")
-        choice = input("Select an option (1–6): ")
+        choice = input("\nSelect an option (1–6): \n")
 
         if choice == '1':
             view_balance()
@@ -134,10 +162,12 @@ def menu():
         elif choice == '5':
             update_account()
         elif choice == '6':
-            print("Thank you for using our Elite Banking Program.")
+            print("\nThank you for using our Elite Banking Program.")
+            print("Have a great day!")
+            print("-------------------------------")
             break
         else:
-            print("Invalid choice. Try again.")
+            print("\nInvalid choice. Try again.")
 
 # Run the menu
 menu()
